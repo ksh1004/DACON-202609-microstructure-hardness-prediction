@@ -1,0 +1,25 @@
+# Python 3.11.9 기준 (Windows 11 + RTX 5060 Laptop / RTX 5060 Ti에서 사용)
+# torch/torchvision은 CUDA 12.8 빌드가 필요 (RTX 50 시리즈):
+#   pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu128
+torch==2.11.0+cu128
+torchvision==0.26.0+cu128
+timm==1.0.30
+transformers==5.19.0
+huggingface_hub==2.2.0
+safetensors==0.8.0
+numpy==2.4.6
+pandas==3.0.6
+scipy==1.17.1
+scikit-learn==1.9.1
+scikit-image==0.26.0
+opencv-python-headless==5.0.0.93
+pillow==12.3.0
+PyWavelets==1.9.0
+matplotlib==3.11.2
+seaborn==0.13.2
+tqdm==4.70.1
+lightgbm==4.7.0
+# --- 기각된 실험에서만 사용 (최종 파이프라인에는 불필요) ---
+# einops==0.8.2      (SCUNet 미세조정 실험)
+# tabicl==2.2.0      (TabICL 회귀 실험)
+# kymatio==0.3.0     (산란 변환 실험)

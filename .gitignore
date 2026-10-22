@@ -1,0 +1,20 @@
+# 대회 데이터 (재배포 금지) · 산출물 · 가중치 · 제출 예측
+data/*
+!data/README.md
+outputs/
+weights/*
+!weights/README.md
+submissions/
+submission/
+logs/
+tmp/
+# 환경·캐시
+.venv/
+__pycache__/
+*.pyc
+*.npz
+*.npy
+*.zip
+*.pth
+*.pt
+.ipynb_checkpoints/

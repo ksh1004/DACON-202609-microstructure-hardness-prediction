@@ -1,0 +1,5 @@
+model,params_M,train_img_s,peak_mem_GB,gpu_power_limit_clock_temp,device,batch,size,dtype,channels_last,rn50_infer_img_s
+resnet18,11.18,867.9,0.72,"88.70 W, [N/A], 975 MHz, 66",NVIDIA GeForce RTX 5060 Laptop GPU,32,256,bf16,False,1473.7
+resnet50,23.51,301.6,2.23,"92.07 W, [N/A], 622 MHz, 68",NVIDIA GeForce RTX 5060 Laptop GPU,32,256,bf16,False,1473.7
+efficientnet_b0,4.01,441.6,1.98,"67.30 W, [N/A], 975 MHz, 65",NVIDIA GeForce RTX 5060 Laptop GPU,32,256,bf16,False,1473.7
+convnext_nano,14.95,440.8,1.92,"91.04 W, [N/A], 622 MHz, 67",NVIDIA GeForce RTX 5060 Laptop GPU,32,256,bf16,False,1473.7
