@@ -1,6 +1,6 @@
-# 합성 미세구조 이미지 경도 예측 — 고정 사전학습 특징 + 학습형 디노이저 + Ridge
+# 합성 미세구조 이미지 경도 예측 — Private 15위 솔루션
 
-**DAKER 합성 미세구조 기반 재료 물성 예측 AI 경진대회**(2026.09.29 ~ 10.19, 개인 참가)
+**[DAKER 합성 미세구조 기반 재료 물성 예측 AI 경진대회](https://daker.ai/public/hackathons/synthetic-microstructure-property-prediction-ai)**(2026.09.29 ~ 10.19, 개인 참가) · 고정 사전학습 특징 + 학습형 디노이저 + Ridge
 
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![PyTorch](https://img.shields.io/badge/PyTorch-2.11%20cu128-EE4C2C?logo=pytorch&logoColor=white)
@@ -9,6 +9,7 @@
 ![scikit-learn](https://img.shields.io/badge/scikit--learn-Ridge-F7931E?logo=scikitlearn&logoColor=white)
 ![DINOv2](https://img.shields.io/badge/DINOv2--L-frozen%20features-4B8BBE)
 ![Depth Anything V2](https://img.shields.io/badge/Depth--Anything--V2--L-backbone%20%2B%20decoder-6E40C9)
+[![License: MIT](https://img.shields.io/badge/License-MIT-2EA44F)](LICENSE)
 
 256×256 흑백 합성 미세구조 이미지 한 장으로 재료의 **경도를 예측하는 회귀** 과제입니다.
 학습 이미지가 500장뿐이라 큰 모델을 미세조정하는 대신, **이미지를 깨끗하게 만드는 디노이저만 학습**하고
@@ -39,7 +40,9 @@
 - **Public 20위 → Private 15위**: 교차검증에서 생기는 선택 편향을 막는 채택 기준(폴드 일관성, 경도 구간 분해, 중첩 교차검증)을
   정해 지켰고, 과적합에 강한 구조를 끝까지 유지했습니다.
 
-> 📊 [제출·실험 기록](docs/submission_log.csv) — 43번의 제출과 기각한 실험을 모두 적은 기록
+> 📊 [제출·실험 기록](docs/submission_log.csv) — 점수가 나온 제출 41회(진단용 상수 제출 2회 제외)와 기각한 실험 기록
+
+> 📦 [학습된 디노이저 가중치](https://github.com/ksh1004/DACON-202609-microstructure-hardness-prediction/releases/tag/weights-v1) — 내려받으면 디노이저 학습 없이 재현 (9-3)
 
 > 📑 [EDA 보고서](reports/EDA_report.md) · [모델 선택](reports/model_selection.md) · [증강](reports/augmentation_report.md) · [앙상블 검토](reports/model_catalog_ensemble.md)
 
@@ -207,6 +210,8 @@ J3 = Ridge( [DINOv2-L 9~17층] ⊕ [Depth-Anything-V2-L 9~17층] ⊕ 0.3 × [깊
 
 ## 5. 결과
 
+![제출별 Public 점수 추이: 첫 제출 12.33에서 최종 9.70까지, 최종 Private 10.04](docs/images/score_progression.png)
+
 | 제출 | 구성 (직전 행 대비 추가된 것) | CV (OOF) | Public | 증분 |
 |---|---|---|---|---|
 | v1 | 수작업 특징 Ridge + 미세조정 CNN 4종 | 13.13 | 12.326 | — |
@@ -227,11 +232,29 @@ J3 = Ridge( [DINOv2-L 9~17층] ⊕ [Depth-Anything-V2-L 9~17층] ⊕ 0.3 × [깊
 | **v32b** | **결합 Ridge J3 (백본 + 깊이 디코더)** | **9.62** | **9.701** | **−0.02** |
 
 **최종 제출은 v32b이고, Private 10.0380으로 231명 중 15위**입니다.
-첫 제출 대비 Public 오차를 21% 줄였습니다. 전체 43번의 제출과 기각한 실험은 [`docs/submission_log.csv`](docs/submission_log.csv)에 있습니다.
+첫 제출 대비 Public 오차를 21% 줄였습니다. 모든 제출과 기각한 실험은 [`docs/submission_log.csv`](docs/submission_log.csv)에 있습니다.
 
 > **예측 폭(배율) 선택** — Ridge는 예측을 평균 쪽으로 줄이는 경향이 있어 train 평균을 기준으로 예측 폭을 넓혔습니다.
 > 상수 제출과 배율만 다른 두 제출로 계산한 Public 최적 배율은 0.98이었고(Public이 좁은 분포라서),
 > test 전체가 train과 같다고 가정해 계산한 Private 최적 배율은 약 1.14였습니다. 최종 구성은 ×1.03(Public 9.7011)과 ×1.06(Public 9.7387) 두 가지로 만들었습니다.
+
+### 가장 단순한 버전
+
+최종 블렌드의 구성원 5개 중 **J3 하나만** 써도 성능 대부분이 나옵니다.
+
+| 구성 | 필요한 것 | OOF | 특징 추출 시간 (9-5 기준) |
+|---|---|---|---|
+| 최종 블렌드 (v32b) | 디노이저 경로 3개, 사전학습 모델 7종 | 9.62 | 약 7시간 |
+| J3만 (조명 보정 4종 평균) | F 경로 디노이저 1개, DINOv2-L·Depth-Anything-V2-L + 깊이 디코더 | 9.82 | 약 2시간 30분 |
+| J3만 (조명 보정 σ48 하나) | 위와 같음 | 9.83 | 약 40분 |
+
+OOF는 예측 폭 배율을 적용하지 않은 값입니다(J3에 ×1.03을 적용하면 9.80). 나머지 구성원 4개(측정 블록, CNN, TIPSv2, DINOv2 4보기)는
+모두 합쳐 OOF를 0.2 더 줄이는 대신 계산량을 세 배로 늘립니다. J3만 쓰려면 `final_v32b.sh`까지 실행한 뒤 블렌드를 J3 그룹 하나로 만들면 됩니다.
+
+```bash
+python src/final_blend.py --out submission/sub_j3.csv --weights 1 --scale 1.03 \
+  --group joint3 outputs/emb_reg/joint3_g0.3_ff{32,48,64,96}_a0.01
+```
 
 ---
 
@@ -355,10 +378,11 @@ CV에서 출발한 추정은 **수백 번의 선택으로 생긴 CV의 낙관을
 ├── experiments/                                   실험 실행 스크립트 — final_v32b.sh = 최종 구성
 ├── reproduce/                                     제출 재현 드라이버 run_final_v*.py (구성 변경 이력)
 ├── reports/                                       EDA·모델 선택·증강·앙상블 보고서
-├── docs/                                          submission_log.csv (제출 43회 + 기각 실험), 리더보드 캡처
+├── docs/                                          submission_log.csv (제출 41회 + 기각 실험), 리더보드 캡처, 점수 추이 그래프
 ├── eda/ · bench/ · tools/                         EDA, GPU 벤치마크(노트북 vs Colab T4), 검증 도구
 ├── data/README.md · weights/README.md             데이터·가중치 준비 방법 (파일은 미포함)
 ├── requirements.txt
+├── LICENSE · THIRD_PARTY_NOTICES.md               코드 라이선스(MIT), 외부 코드·가중치 고지
 └── .gitignore
 ```
 
@@ -378,15 +402,16 @@ CV에서 출발한 추정은 **수백 번의 선택으로 생긴 CV의 낙관을
 ```bash
 python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt --extra-index-url https://download.pytorch.org/whl/cu128
+# Linux/macOS는 .venv/bin/python
 ```
 
 > - **RTX 50 시리즈(Blackwell)** 는 CUDA 12.8(cu128) 빌드가 필요합니다.
 > - 특징 추출은 bf16 autocast로 했습니다. VRAM 8GB에서 DINOv2-L·Depth-Anything-V2-L(448 입력, 배치 8) 추출이 가능합니다.
 > - 사전학습 모델(DINOv2, Depth-Anything-V2, TIPSv2, ImageNet CNN)은 처음 실행할 때 Hugging Face Hub에서 내려받습니다.
 
-### 9-3. 데이터 준비
+### 9-3. 데이터·가중치 준비
 
-대회 데이터는 재배포가 금지돼 포함하지 않습니다. 대회 페이지에서 받아 아래처럼 둡니다.
+대회 데이터는 재배포가 금지돼 포함하지 않습니다. [대회 페이지](https://daker.ai/public/hackathons/synthetic-microstructure-property-prediction-ai)에서 받아 아래처럼 둡니다.
 
 ```
 data/
@@ -396,8 +421,19 @@ data/
 └── test/   TEST_000001.png ...
 ```
 
-디노이저 가중치는 [`weights/README.md`](weights/README.md)를 참고하세요. 공개 DRUNet(gray)은 KAIR에서 내려받고,
-자체 디노이저는 아래 `--mode train`으로 직접 학습할 수 있습니다.
+디노이저 가중치는 [Releases](https://github.com/ksh1004/DACON-202609-microstructure-hardness-prediction/releases/tag/weights-v1)에서 받습니다.
+공개 DRUNet(gray)은 두 실행 모드 모두 필요하고, 자체 디노이저 3개는 `--mode infer`에만 필요합니다. 저장소 루트에서 실행합니다(Windows는 Git Bash).
+
+```bash
+REL=https://github.com/ksh1004/DACON-202609-microstructure-hardness-prediction/releases/download/weights-v1
+mkdir -p weights/pretrained_denoiser
+curl -L -o weights/denoiser_cm7_am22_l1_i10000_boot.pt    $REL/denoiser_cm7_am22_l1_i10000_boot.pt
+curl -L -o weights/denoiser_drt10b_i10000.pt              $REL/denoiser_drt10b_i10000.pt
+curl -L -o weights/pretrained_denoiser/drunetft_ft1b.pt   $REL/drunetft_ft1b.pt
+curl -L -o weights/pretrained_denoiser/drunet_gray.pth    https://github.com/cszn/KAIR/releases/download/v1.0/drunet_gray.pth
+```
+
+파일 크기와 SHA256은 [`weights/README.md`](weights/README.md)에 있습니다.
 
 ### 9-4. 실행 순서
 
@@ -406,19 +442,37 @@ data/
 #    드라이버는 자기 위치를 기준으로 src/를 찾으므로 저장소 루트로 복사해서 실행합니다.
 #    단계별 산출물이 있으면 건너뛰므로, 중단돼도 같은 명령으로 이어서 실행됩니다.
 cp reproduce/run_final_v29b.py run_final.py
-python run_final.py --mode train      # 디노이저까지 처음부터 (전체 약 9~11시간, RTX 5060 Laptop 기준)
-python run_final.py --mode infer      # 디노이저는 저장된 가중치로 추론만 (특징 추출·Ridge는 새로 계산)
+python run_final.py --mode infer      # 9-3에서 받은 디노이저 가중치 사용 (약 7~9시간)
+python run_final.py --mode train      # 또는 디노이저까지 처음부터 학습 (약 9~11시간)
 
 # ⑥ 최종 구성(v32b): Depth-Anything 깊이 디코더 특징 + 결합 Ridge(J3) + 최종 블렌드
-bash experiments/final_v32b.sh        # → submission/sub_v32b_k103.csv
+bash experiments/final_v32b.sh        # Windows (기본 파이썬: ./.venv/Scripts/python.exe)
+PY=.venv/bin/python bash experiments/final_v32b.sh   # Linux/macOS
+# → submission/sub_v32b_k103.csv
 ```
 
-- 두 모드 모두 공개 DRUNet(`weights/pretrained_denoiser/drunet_gray.pth`)이 필요합니다. `--mode infer`는 자체 디노이저 가중치 3개도 필요합니다([`weights/README.md`](weights/README.md)).
 - `final_v32b.sh`는 위 드라이버가 만든 `outputs/` 산출물(F 경로 이미지, DINOv2 16보기 특징, 나머지 구성원 Ridge 결과)을 그대로 읽습니다.
-  `PY` 환경변수로 파이썬 경로를 바꿀 수 있습니다(기본값 `./.venv/Scripts/python.exe`).
 - 드라이버의 최종 블렌드(`submission/submission.csv`)는 v29b 구성이고, 최종 제출과 같은 파일은 `final_v32b.sh`가 만드는 `submission/sub_v32b_k103.csv`입니다.
+- `--mode infer`는 대회 때와 같은 디노이저 가중치를 씁니다. `--mode train`은 디노이저를 새로 학습하므로 최종 점수가 조금 달라질 수 있습니다.
 
-### 9-5. 트러블슈팅
+### 9-5. 소요 시간
+
+| 단계 | 횟수 | 1회 | 합계 |
+|---|---|---|---|
+| 디노이저 학습 (`--mode train`만): U·X·F 경로 각 2단계 | 6 | 12~20분 | 약 1시간 50분 |
+| DINOv2-L 4보기 (U 경로) | 4 | 약 3.5분 | 약 15분 |
+| DINOv2-L 16보기 (F 경로) | 4 | 약 11분 | 약 45분 |
+| Depth-Anything-V2-L 16보기 (F 경로) | 4 | 약 15분 | 약 1시간 |
+| Depth-Anything 깊이 디코더 8보기 (F 경로) | 4 | 약 12분 | 약 50분 |
+| TIPSv2-So400m 16보기 (U·X·F 경로) | 12 | 약 17분 | 약 3시간 25분 |
+| 고정 CNN 8보기 (4종 × U·X 경로) | 32 | 약 1.5분 | 약 50분 |
+| 디노이즈 추론·조명 보정·측정 특징·Ridge·블렌드 | — | 단계마다 수 분 | 1시간 미만 (추정) |
+| **합계** | | | **infer 약 7~9시간 / train 약 9~11시간** |
+
+1회 시간은 실험 로그의 실측값입니다. 디노이저·DINOv2 16보기·TIPSv2·CNN은 RTX 5060 Ti 16GB에서, 나머지는 RTX 5060 Laptop 8GB에서 측정했습니다.
+같은 ViT-L 추출이 Laptop에서 약 1.3배 느렸습니다. 조명 보정 4종 × 디노이즈 경로마다 특징을 따로 뽑는 구조라 특징 추출이 대부분을 차지하고, TIPSv2만 전체의 절반 가까이 됩니다.
+
+### 9-6. 트러블슈팅
 
 <details>
 <summary>노트북 한 대 · Windows 환경에서 실제로 겪은 문제 8가지 (펼치기)</summary>
@@ -458,8 +512,12 @@ GPU·torch 버전이 다르면 bf16 연산 차이로 예측이 소수점 첫째~
 
 ## 11. 공개 범위
 
-- **포함**: 디노이저·조명 보정·특징 추출·Ridge·블렌드 코드, 실험 스크립트(기각된 것 포함), 보고서, 제출·실험 기록, 리더보드 캡처
-- **제외**: 대회 데이터(이미지·CSV·설명 자료), 대회 이미지가 들어간 그림 4장, 모델 가중치(자체 디노이저 포함), 특징 캐시·구성원 예측, 제출 CSV, 개인 작업 노트
+- **포함**: 디노이저·조명 보정·특징 추출·Ridge·블렌드 코드, 실험 스크립트(기각된 것 포함), 보고서, 제출·실험 기록, 리더보드 캡처,
+  학습된 디노이저 가중치 3개([Releases](https://github.com/ksh1004/DACON-202609-microstructure-hardness-prediction/releases/tag/weights-v1))
+- **제외**: 대회 데이터(이미지·CSV·설명 자료), 대회 이미지가 들어간 그림 4장, 공개 사전학습 모델 가중치(각 배포처에서 내려받음), 특징 캐시·구성원 예측, 제출 CSV, 개인 작업 노트
+
+**이 저장소의 라이선스** — 코드와 자체 디노이저 가중치는 [MIT](LICENSE)입니다. DRUNet 구조 코드와 DRUNet 미세조정 가중치는 KAIR(MIT),
+`src/scunet_net.py`는 SCUNet(Apache-2.0)의 고지를 함께 따릅니다([THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
 
 **사용한 사전학습 모델과 라이선스** — 모두 대회 시작일(2026-09-29) 전에 공개된 가중치이고, 특징 추출(추론)에만 사용했습니다. DRUNet만 예외로 미세조정했습니다.
 
