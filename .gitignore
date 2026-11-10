@@ -1,20 +1,36 @@
-# 대회 데이터 (재배포 금지) · 산출물 · 가중치 · 제출 예측
+# ── 대회 데이터·자료 (재배포 금지, 로컬 보관) ──
 data/*
 !data/README.md
+open.zip
+/*.pdf
+
+# ── 산출물·가중치·제출 예측 (용량이 크거나 다시 만들 수 있음, 로컬 보관) ──
 outputs/
 weights/*
 !weights/README.md
 submissions/
 submission/
 logs/
-tmp/
-# 환경·캐시
+
+# ── 개인 보관 자료 (진행 노트, 메모 사본, 개인 경로가 남은 초기 스크립트, 재현 시험 로그) ──
+archive/
+
+# ── 분석 캐시·중간 산출물 ──
+analysis/*.npy
+analysis/*.npz
+analysis/*.csv
+
+# ── 대회 이미지가 들어간 그림 ──
+reports/figures/fig02_samples_by_hardness.png
+reports/figures/fig05_feature_pipeline.png
+reports/figures/fig10_near_duplicates.png
+reports/figures/fig_aug_examples.png
+
+# ── 환경·캐시 ──
 .venv/
 __pycache__/
 *.pyc
-*.npz
-*.npy
-*.zip
-*.pth
-*.pt
 .ipynb_checkpoints/
+*.zip
+*.pt
+*.pth
